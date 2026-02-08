@@ -1,0 +1,5 @@
+To support structured storage and reproducibility, the meeting transcript data is stored in a relational database using SQLite. SQLite was chosen because it is lightweight, file-based, and sufficient for the scale of data used in this project.
+
+The database schema is designed around a single table, meeting_utterances, which stores each spoken utterance as one record. Each record includes a meeting identifier, speaker identifier, transcript text, and timing information. This design preserves the natural sequence of conversation while allowing efficient querying by meeting or speaker.
+
+Storing the data in a relational format enables consistent access patterns across different stages of the project and provides a clear foundation for later analytical steps.
