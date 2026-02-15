@@ -1,7 +1,0 @@
-The primary dataset used in this project is the AMI Meeting Corpus. This dataset contains transcripts of real workplace meetings recorded as part of a research study on meeting interactions. The transcripts represent natural group discussions, including planning, decision-making, and problem-solving conversations, which makes the dataset well-suited for analyzing meeting effectiveness.
-
-The AMI Meeting Corpus is obtained through the Hugging Face datasets repository, where it is publicly available for research and educational use. For this project, the ihm (Individual Headset Microphone) subset is used. Although the original corpus includes audio and video data, this project uses only the textual transcript data, as the analysis focuses exclusively on spoken content.
-
-Each transcript consists of multiple utterances associated with a unique meeting identifier. Each utterance includes the spoken text and timing information, which allows the conversation flow of a meeting to be reconstructed. This structure is essential for measuring redundancy, identifying decisions, and evaluating action item clarity.
-
-The dataset is accessed programmatically using the Hugging Face datasets library. This ensures that data acquisition is fully reproducible and does not require manual downloading or preprocessing steps outside the repository.
