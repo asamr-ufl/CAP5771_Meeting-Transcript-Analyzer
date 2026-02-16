@@ -1,9 +1,0 @@
-Initial exploration of the sampled AMI meeting transcript data shows that the dataset is well-structured and complete, with no missing values in key fields such as meeting identifiers, speaker identifiers, transcript text, or timing information.
-
-The distribution of utterances across meetings is uneven, with some meetings containing substantially more utterances than others. Speaker participation is also imbalanced, with certain speakers contributing a large portion of the dialogue within a meeting. This reflects natural meeting dynamics and is important to consider when interpreting efficiency metrics.
-
-Analysis of utterance lengths reveals a large number of very short spoken segments, such as acknowledgments or backchannel responses (e.g., “yeah”, “okay”), alongside fewer but longer utterances that contain substantive discussion. This suggests that simple sentence counts alone are insufficient to measure information content.
-
-Timing analysis shows that many utterances have very short durations, while a smaller number of utterances span several seconds. These observations indicate that filtering or weighting utterances may be necessary in later stages to avoid overcounting low-information speech.
-
-Overall, the exploratory analysis highlights patterns and behaviors that will inform preprocessing and metric design in subsequent milestones.

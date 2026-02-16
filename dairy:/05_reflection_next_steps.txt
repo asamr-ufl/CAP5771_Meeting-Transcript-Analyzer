@@ -1,8 +1,0 @@
-*** Reflection and Next Steps ***
-
-
-Milestone 1 focused on clearly defining the problem, acquiring relevant data, and understanding the structure and characteristics of the dataset. One of the main challenges encountered was managing the size of the AMI Meeting Corpus under limited local storage constraints. This was addressed by streaming the dataset and working with a representative sample, which allowed exploration and database design without compromising reproducibility.
-
-Exploratory analysis revealed several important characteristics of meeting transcripts, including uneven speaker participation, a large number of short utterances, and significant variation in utterance duration. These observations highlighted the need to distinguish between low-information speech and substantive discussion in later stages of the project.
-
-In the next milestone, the project will focus on preprocessing transcript text and implementing interpretable metrics such as decision density, redundancy, and action item clarity. These metrics will build directly on the insights gained during data exploration and will be validated on unseen meeting transcripts.
