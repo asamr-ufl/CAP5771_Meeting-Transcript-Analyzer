@@ -1,0 +1,23 @@
+# Data files - too large for Git
+data/*.xml
+data/*.wav
+data/*.zip
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+env/
+venv/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Database
+*.db
+*.sqlite
+
+# IDE
+.vscode/
+.idea/

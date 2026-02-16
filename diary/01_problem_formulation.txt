@@ -1,0 +1,71 @@
+Date: 2026-02-08
+Author: RAKESH KUMAR REDDY DODDA
+Team:
+1. Rahul Reddy Asam
+2. Ashruth Reddy Gangula
+3. RAKESH KUMAR REDDY DODDA
+
+=== PROBLEM FORMULATION ===
+
+1. PROBLEM TYPE
+We are solving multiple interconnected problems:
+- Classification: Classify sentences as "decision," "action item," or "general discussion"
+- Exploration: Discover patterns like decision timing and redundancy
+- Decision Support: Help managers assess meeting effectiveness
+
+2. CENTRAL QUESTION
+Are meetings actually producing decisions and clear action items, or are they mostly 
+repetitive discussion?
+
+3. WHY THIS MATTERS
+- Meetings consume significant time in professional/academic environments
+- Poor meetings waste labor hours and create unclear responsibilities
+- Objective measurement of meeting effectiveness is rarely done
+- Transcripts already exist, making this analysis feasible
+
+4. DATA SOURCES
+- AMI Meeting Corpus (manual annotations, 22MB)
+- ICSI Meeting Corpus
+- Both are publicly available and structured for research
+
+5. WHAT MAKES THIS UNIQUE
+- Focuses on information quality, not sentiment analysis
+- Produces interpretable metrics (decision density, redundancy score, action item clarity)
+- Output is actionable, not a black-box score
+
+6. REQUIRED VARIABLES
+- Text of each utterance: Needed to analyze content
+- Meeting ID: To group utterances into meetings
+- Speaker turns/timestamps: To track sequence and repetition
+These enable measurement of decision timing, redundancy, and follow-through.
+
+7. SUCCESS CRITERIA
+A meaningful output shows:
+- Low decision density → Few decisions made
+- High redundancy → Repetitive discussion
+- Poorly defined action items → Unclear next steps
+This clearly indicates an inefficient meeting.
+
+8. STAKEHOLDERS & BENEFITS
+- Team leads, instructors, and managers
+- Can identify meetings needing restructuring
+- Improves productivity without monitoring individuals
+
+9. REALISTIC SCOPE
+- Dataset is already available
+- Analysis uses standard NLP tools on a laptop
+- Streamlit interface sufficient for demonstration
+- Timeline: 10 weeks (achievable for 3-person team)
+
+10. HEILMEIER CATECHISM SUMMARY
+What are we trying to do? Measure if meetings result in decisions vs. repetitive discussion.
+How is it done today? Subjectively through opinions/surveys (inconsistent, often ignored).
+What's new? Direct analysis of what was said using existing transcripts for objective measurement.
+Who cares? Managers/teams/instructors who want better meetings to save time.
+Risks? Misclassifying statements; domain differences (acceptable, results are explanatory not punitive).
+Cost? Zero monetary cost; only computation and development time.
+Timeline? One semester; core prototype within 6-8 weeks.
+Mid-term success? Core metrics (decision density, redundancy, action item clarity) correctly 
+computed for subset of meetings with reasonable, explainable results.
+Final success? Fully functional Streamlit app that processes meeting transcripts and provides 
+clear visual feedback on meeting efficiency for previously unseen transcripts.
