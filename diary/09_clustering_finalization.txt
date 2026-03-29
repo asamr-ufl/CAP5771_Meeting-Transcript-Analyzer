@@ -1,0 +1,92 @@
+CAP5771 - Meeting Transcript Efficiency Analyzer
+Milestone 2 | Week 9 Diary Entry
+Topic: Data Modeling — Clustering and Model Finalization
+
+Date: Week of March 9, 2026
+Team: Rahul Reddy Asam, Ashruth Reddy Gangula, Rakesh Kumar Reddy Dodda
+
+-----------------------------------------------------------------------
+WHAT WE WORKED ON THIS WEEK
+-----------------------------------------------------------------------
+
+This week we completed the modeling notebook. Two main tasks: finalize
+the classifier comparison and add the meeting-level clustering.
+
+CLASSIFIER FINALIZATION
+We ran all five CV experiments to completion and recorded macro-F1 and
+accuracy for each model. The full results are documented in the
+modeling notebook. XGBoost came out on top by macro-F1, followed
+closely by Random Forest. The two linear models (LR and SVM) were
+competitive on the majority class (discussion) but weaker on the
+minority classes (decision and action), which is expected — linear
+decision boundaries struggle with the subtle language patterns that
+distinguish a casual agreement from a formal decision.
+
+The error analysis was eye-opening. The most common confusion is
+between action items and discussion. Looking at the misclassified
+examples, we found that many action-item utterances in the AMI corpus
+are phrased very informally ("I can look into that", "maybe we should
+try") without the explicit ownership or deadline cues our wrangling
+lexicon looks for. This suggests that expanding the action lexicon in
+a future iteration would improve both the labeling step and the
+classifier's training signal.
+
+MEETING-LEVEL CLUSTERING
+The utterance classifier answers "what kind of utterance is this?"
+The clustering answers "what kind of meeting is this?" We ran K-Means
+on four meeting-level features: decision density, action density,
+redundancy score, and action clarity. All features were standardized
+before clustering.
+
+To select k, we plotted both the elbow curve (inertia vs. k) and the
+silhouette score (cluster cohesion vs. k). The silhouette score peaked
+at k=4, which also corresponds to a visible elbow in the inertia curve.
+Four clusters gave us interpretable groups that we labeled from most to
+least efficient based on average efficiency score: Highly Efficient,
+Moderately Efficient, Low Efficiency, and Very Low Efficiency.
+
+A 2D PCA projection confirmed the clusters are reasonably well
+separated in the reduced space. The Highly Efficient cluster is a
+small group of meetings with both high decision density and high action
+clarity — these appear to be scenario meetings from the AMI corpus
+where participants were given a more structured task. The majority of
+meetings fall into the Low Efficiency and Moderately Efficient clusters.
+
+SAVING OUTPUTS
+All model artifacts are saved to a models/ directory:
+- best_classifier.pkl (best utterance classifier + TF-IDF pipeline)
+- label_encoder.pkl
+- kmeans_clusters.pkl
+- cluster_scaler.pkl
+
+All data outputs are saved to data/processed/:
+- analysis_ready_with_preds.csv (utterances with CV predictions)
+- meeting_metrics_clustered.csv (meetings with cluster assignments)
+
+-----------------------------------------------------------------------
+DECISIONS MADE
+-----------------------------------------------------------------------
+
+- k=4 for K-Means, selected by silhouette score.
+- Cluster labels assigned by ranking clusters on average efficiency
+  score so that the naming is intuitive and data-driven, not arbitrary.
+- Save the full pipeline (TF-IDF + classifier) together as one pickle
+  so inference in Milestone 3 requires only one .predict() call.
+
+-----------------------------------------------------------------------
+SETBACKS
+-----------------------------------------------------------------------
+
+We initially tried k=3 clusters, which worked but merged the two
+bottom tiers into one group that was hard to interpret. Silhouette
+analysis confirmed k=4 was stronger, and manually reviewing the
+meetings in each cluster confirmed the distinction is meaningful.
+
+-----------------------------------------------------------------------
+NEXT STEPS
+-----------------------------------------------------------------------
+
+Build the visualization dashboard notebook this week. The static
+panels need to tell a clear narrative: meetings are mostly discussion,
+decisions cluster unevenly, redundancy is the strongest differentiator
+between efficient and inefficient meetings.
