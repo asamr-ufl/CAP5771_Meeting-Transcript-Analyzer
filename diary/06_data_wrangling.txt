@@ -1,0 +1,70 @@
+CAP5771 - Meeting Transcript Efficiency Analyzer
+Milestone 2 | Week 6 Diary Entry
+Topic: Data Wrangling — Starting the Pipeline
+
+Date: Week of February 16, 2026
+Team: Rahul Reddy Asam, Ashruth Reddy Gangula, Rakesh Kumar Reddy Dodda
+
+-----------------------------------------------------------------------
+WHAT WE WORKED ON THIS WEEK
+-----------------------------------------------------------------------
+
+This week officially kicked off Milestone 2. We started by reviewing
+the two processed CSV files we saved at the end of Milestone 1 —
+utterance_level_data.csv and meeting_level_features.csv — and planning
+what transformations would be needed before we could model anything.
+
+The first thing we noticed was that the raw text field still contained
+AMI corpus noise tokens like <vocalsound>, <gap>, and <disfmarker>.
+These are annotation artifacts from the original recording process and
+carry no linguistic meaning, so we wrote a cleaning function using
+regex to strip them out. We also lowercased all text and collapsed
+extra whitespace. After cleaning, we dropped a small number of
+utterances that reduced to empty strings — these were utterances that
+were nothing but noise tokens.
+
+We then tackled the labeling step. Our project's core question is
+whether meetings produce decisions and action items, so we need each
+utterance tagged as one of three categories: decision, action, or
+discussion. Rather than training a model for this from scratch (which
+would require labeled training data we do not have), we used a
+keyword-pattern approach based on regex. We built two lexicons —
+one for decision signals (phrases like "we agreed", "let's go with",
+"that's decided") and one for action signals ("I will", "you need to",
+"follow-up", "action item"). Any utterance not matching either pattern
+is classified as discussion.
+
+We debated whether this approach was good enough. The concern is that
+natural language is messy and people express decisions informally.
+After checking a sample of flagged utterances manually, we felt the
+precision was acceptable for this stage. False negatives (missed
+decisions) are more likely than false positives, which is a known
+limitation we plan to address in Milestone 3 using a learned model
+if time allows.
+
+-----------------------------------------------------------------------
+DECISIONS MADE
+-----------------------------------------------------------------------
+
+- Strip all AMI noise tokens before any analysis; they add no signal.
+- Use keyword regex for labeling rather than a pretrained NLP model,
+  because it is reproducible without API keys or internet access.
+- Keep the three-class scheme (decision / action / discussion) as
+  originally planned in Milestone 1.
+
+-----------------------------------------------------------------------
+SETBACKS
+-----------------------------------------------------------------------
+
+One issue we ran into was that the AMI corpus uses non-standard tokens
+in inconsistent formats across meetings (sometimes <vocalsound>,
+sometimes <vocal-sound>). We had to broaden our regex to catch both
+variants. This took longer than expected.
+
+-----------------------------------------------------------------------
+NEXT STEPS
+-----------------------------------------------------------------------
+
+Next week we will finish the feature engineering section — computing
+redundancy scores, decision density, and action clarity per meeting —
+and validate all outputs before saving the analysis-ready dataset.
