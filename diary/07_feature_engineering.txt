@@ -1,0 +1,88 @@
+CAP5771 - Meeting Transcript Efficiency Analyzer
+Milestone 2 | Week 7 Diary Entry
+Topic: Data Wrangling — Feature Engineering and Validation
+
+Date: Week of February 23, 2026
+Team: Rahul Reddy Asam, Ashruth Reddy Gangula, Rakesh Kumar Reddy Dodda
+
+-----------------------------------------------------------------------
+WHAT WE WORKED ON THIS WEEK
+-----------------------------------------------------------------------
+
+This week we finished the wrangling pipeline by implementing the three
+core efficiency metrics and adding a validation layer.
+
+DECISION DENSITY
+Defined as the number of decision-labeled utterances divided by total
+utterances in a meeting. This is simple to compute and easy to
+interpret: a meeting with density 0.05 made a decision roughly once
+every 20 utterances. Across the 171 AMI meetings, the average is low —
+most meetings are dominated by general discussion, which matches what
+we expected from real workplace settings.
+
+REDUNDANCY SCORE
+This was the most technically involved metric. The idea is to measure
+how much of what gets said has already been said earlier in the same
+meeting. We used bigram TF-IDF cosine similarity: for each utterance,
+we compare its bigram profile against all previous utterances in the
+meeting and flag it as redundant if the maximum similarity exceeds a
+threshold of 0.30. The redundancy score for a meeting is the fraction
+of utterances that exceed this threshold.
+
+We chose bigrams over unigrams because individual words repeat
+constantly in any conversation ("the", "we", "meeting") but bigram
+combinations are more distinctive. The 0.30 threshold was chosen by
+manually reviewing a sample of flagged pairs and adjusting until the
+flags looked semantically reasonable.
+
+ACTION CLARITY
+Defined as the fraction of action-labeled utterances that contain an
+explicit owner (e.g. "I will", "you will") or an explicit deadline
+(e.g. "by Friday", "before next week", "by EOD"). This captures
+whether action items are properly assigned or just vaguely mentioned.
+Meetings with low action clarity may assign tasks without naming
+who is responsible, which is a known cause of follow-through failure.
+
+EFFICIENCY SCORE
+A composite of the three metrics: 0.4 * decision_density +
+0.3 * action_density + 0.3 * (1 - redundancy_score). The weights
+were chosen to prioritize decisions slightly over action items, and
+to penalize high redundancy. All three underlying metrics are in [0,1]
+so the composite is also in [0,1] and can be interpreted directly.
+
+VALIDATION
+We added assertion-based checks at the end of the wrangling notebook:
+- All metric columns are in [0, 1]
+- No null values in any required column
+- Schema matches the expected column list
+
+All checks passed. The final output is analysis_ready.csv (utterance
+level, ~134k rows) and meeting_metrics.csv (meeting level, 171 rows).
+
+-----------------------------------------------------------------------
+DECISIONS MADE
+-----------------------------------------------------------------------
+
+- Bigram cosine similarity at threshold 0.30 for redundancy detection.
+- Composite efficiency formula with weights 0.4 / 0.3 / 0.3.
+- Hard validation assertions at the end of the pipeline so future
+  changes cannot silently break the schema.
+
+-----------------------------------------------------------------------
+SETBACKS
+-----------------------------------------------------------------------
+
+Computing redundancy for all 171 meetings using cosine similarity was
+slow the first time we ran it (about 12 minutes on a laptop). We
+optimized it by using scikit-learn's CountVectorizer with ngram_range
+(2,2) and sparse matrix operations instead of looping over pairs
+manually. After optimization, runtime dropped to under 2 minutes.
+
+-----------------------------------------------------------------------
+NEXT STEPS
+-----------------------------------------------------------------------
+
+Start the modeling notebook next week. Plan to test at least five
+classifiers for the utterance labeling task and use stratified K-fold
+cross-validation to evaluate them fairly given the class imbalance
+between discussion (majority) and decision/action (minority).
