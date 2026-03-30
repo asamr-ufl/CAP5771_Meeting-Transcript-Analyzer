@@ -3,7 +3,6 @@ Milestone 2 | Week 8 Diary Entry
 Topic: Data Modeling — Classifier Comparison
 
 Date: Week of March 2, 2026
-Team: Rahul Reddy Asam, Ashruth Reddy Gangula, Rakesh Kumar Reddy Dodda
 
 -----------------------------------------------------------------------
 WHAT WE WORKED ON THIS WEEK
