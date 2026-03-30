@@ -180,4 +180,3 @@ On the modeling side, XGBoost came out on top by macro-F1, but the gap between m
 - Ashruth Reddy Gangula — [@AshruthReddy1](https://github.com/AshruthReddy1)
 - Rakesh Kumar Reddy Dodda — [@RAKESH-D0DDA](https://github.com/RAKESH-D0DDA)
 
-CAP5771 Intro to Data Science · Dr. Laura Melissa Cruz Castro · University of Florida · Spring 2026
