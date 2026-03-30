@@ -3,7 +3,6 @@ Milestone 2 | Week 7 Diary Entry
 Topic: Data Wrangling — Feature Engineering and Validation
 
 Date: Week of February 23, 2026
-Team: Rahul Reddy Asam, Ashruth Reddy Gangula, Rakesh Kumar Reddy Dodda
 
 -----------------------------------------------------------------------
 WHAT WE WORKED ON THIS WEEK
