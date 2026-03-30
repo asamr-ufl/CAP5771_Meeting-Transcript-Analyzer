@@ -3,7 +3,6 @@ Milestone 2 | Week 6 Diary Entry
 Topic: Data Wrangling — Starting the Pipeline
 
 Date: Week of February 16, 2026
-Team: Rahul Reddy Asam, Ashruth Reddy Gangula, Rakesh Kumar Reddy Dodda
 
 -----------------------------------------------------------------------
 WHAT WE WORKED ON THIS WEEK
