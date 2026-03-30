@@ -1,0 +1,129 @@
+CAP5771 - Meeting Transcript Efficiency Analyzer
+Milestone 2 | Week 10 Diary Entry
+Topic: Visualization Dashboard and Milestone 2 Reflection
+
+Date: Week of March 16, 2026
+
+-----------------------------------------------------------------------
+WHAT WE WORKED ON THIS WEEK
+-----------------------------------------------------------------------
+
+This week we built the visualization dashboard notebook and wrapped up
+Milestone 2. The notebook is data_visualization_static.ipynb and
+contains both static panels and interactive widget extensions.
+
+STATIC DASHBOARD PANELS
+We organized the static section into six panels that tell a complete
+story about meeting efficiency:
+
+Panel 1 — KPI cards at the top give the viewer five headline numbers
+instantly: total meetings, average efficiency score, average decision
+density, average redundancy, and average action clarity. These orient
+the viewer before any charts appear.
+
+Panel 2 — An efficiency score histogram shows the distribution is
+roughly bell-shaped and slightly left-skewed, meaning most meetings
+cluster around moderate efficiency with a tail of very inefficient
+meetings. A cluster pie chart next to it shows about half of all
+meetings fall into the two lower-efficiency categories.
+
+Panel 3 — KDE curves split by cluster show how the four efficiency
+groups differ on each individual metric. The most striking finding
+here is that redundancy score separates Highly Efficient meetings from
+all other clusters more cleanly than any other metric. High-efficiency
+meetings have noticeably lower redundancy — they cover ground once
+and move on. Decision density is also higher but the separation is
+less dramatic.
+
+Panel 4 — An interactive cluster explorer widget lets the viewer
+filter to any cluster and see per-meeting bar charts for each metric,
+plus a table of the top and bottom 5 meetings by efficiency score.
+
+Panel 5 — A per-meeting deep dive widget lets the viewer select a
+single meeting and see its utterance timeline (colored by label),
+label breakdown bar chart, metric scorecard, and sample decision and
+action utterances. This is useful for understanding what the numbers
+mean in terms of actual language.
+
+Panel 6 — A model performance summary shows F1 per class and a box
+plot of efficiency scores per cluster, confirming that the cluster
+labels are well-separated on the target metric.
+
+WIDGET EXTENSIONS
+Beyond the two widgets built into the static section (cluster explorer
+and meeting deep dive), we appended four additional interactive
+widgets:
+- W1: Side-by-side meeting comparison with delta annotations
+- W2: Label filter and transcript browser with a formatted utterance table
+- W3: Custom efficiency score builder with adjustable weights
+- W4: Speaker contribution explorer with utterance/word count toggle
+
+WHAT WE LEARNED FROM THE VISUALIZATIONS
+The main finding is that redundancy is the dominant signal for meeting
+inefficiency. Many meetings in the AMI corpus revisit the same topics
+repeatedly without making decisions. Action items, when they do appear,
+often lack explicit ownership — the action clarity score is low even in
+moderately efficient meetings.
+
+This has a practical implication for the Milestone 3 Streamlit app:
+the most useful alert we can surface for a user is not "your meeting
+had few decisions" (which they probably already sense) but rather
+"40% of your utterances were repetitive" — that is the insight that
+is hardest to notice in real-time.
+
+-----------------------------------------------------------------------
+DECISIONS MADE
+-----------------------------------------------------------------------
+
+- Keep the static panels as a self-contained narrative first; widgets
+  follow as extensions so the notebook can be read top to bottom
+  without needing any interaction.
+- Write a written summary at the bottom of the static section so the
+  grader can read the key takeaways without running the widgets.
+
+-----------------------------------------------------------------------
+SETBACKS
+-----------------------------------------------------------------------
+
+The per-meeting deep dive widget initially crashed on meetings with
+very few utterances because the word count KDE plot requires at least
+two data points. We added a try/except guard around the KDE call with
+a fallback to a simple bar chart.
+
+We also had an issue with the ipywidgets Output context manager not
+clearing correctly when switching meetings rapidly — solved by using
+clear_output(wait=True) which defers clearing until new content is
+ready, eliminating the flicker.
+
+-----------------------------------------------------------------------
+REFLECTION ON MILESTONE 2 AS A WHOLE
+-----------------------------------------------------------------------
+
+Looking back at the five weeks of Milestone 2, the biggest lesson
+is that feature engineering took far longer than modeling. The decision
+about how to measure redundancy and what threshold to use involved a
+lot of manual inspection and iteration. The actual model training, by
+comparison, was fast once the features were ready.
+
+The class imbalance problem is real and we handled it explicitly at
+every stage — in the labeling step (keyword rules that look for
+specific positive signals rather than assuming everything is
+discussion), in the classifier training (class_weight='balanced'), and
+in the evaluation metric (macro-F1 rather than accuracy).
+
+If we were starting over, we would have written the validation checks
+earlier — before feature engineering, not after. We caught a small bug
+in the redundancy calculation during validation that would have silently
+corrupted downstream models if we had not checked.
+
+-----------------------------------------------------------------------
+NEXT STEPS FOR MILESTONE 3
+-----------------------------------------------------------------------
+
+- Build a Streamlit app that accepts a raw transcript upload
+- Load the saved best_classifier.pkl and run the wrangling + prediction
+  pipeline on the uploaded file in real time
+- Display a dashboard similar to the notebook panels but adapted for
+  a single meeting rather than the full corpus
+- Investigate whether a fine-tuned sentence-level classifier (e.g.
+  using sentence-transformers) would improve action/decision recall
