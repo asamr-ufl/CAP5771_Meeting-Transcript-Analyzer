@@ -1,0 +1,90 @@
+CAP5771 - Meeting Transcript Efficiency Analyzer
+Milestone 2 | Week 8 Diary Entry
+Topic: Data Modeling — Classifier Comparison
+
+Date: Week of March 2, 2026
+
+-----------------------------------------------------------------------
+WHAT WE WORKED ON THIS WEEK
+-----------------------------------------------------------------------
+
+This week we built the modeling notebook and trained five classifiers
+for the utterance labeling task. The goal is to take the cleaned
+utterance text and automatically predict whether it is a decision,
+an action item, or general discussion.
+
+WHY WE NEED A MODEL ON TOP OF KEYWORD RULES
+The wrangling step already labels utterances using keyword patterns.
+So why train a classifier at all? Two reasons. First, keyword rules
+are brittle — they miss decisions that are phrased informally ("ok
+sounds good", "let's do that") and miss action items that lack
+standard trigger words. A learned model can capture these softer
+signals. Second, the rubric specifically requires a model aligned with
+the project goal. The classifier gives us measurable precision and
+recall that we can report and interpret.
+
+FEATURE REPRESENTATION
+All five models share the same TF-IDF feature matrix with unigrams and
+bigrams, max 15,000 features, sublinear term frequency scaling, and
+minimum document frequency of 2. Using a shared feature space ensures
+the comparison is fair — the only variable is the learning algorithm.
+
+THE FIVE MODELS
+1. Logistic Regression — fast linear baseline, coefficients tell us
+   which n-grams most strongly predict each class.
+2. Multinomial Naive Bayes — classic NLP choice, efficient on sparse
+   matrices.
+3. Linear SVM — typically strong on high-dimensional text features.
+4. Random Forest — captures non-linear patterns and interaction effects
+   between n-grams.
+5. XGBoost — gradient boosting, usually the strongest overall performer
+   on structured tasks.
+
+CLASS IMBALANCE HANDLING
+Discussion utterances make up roughly 85% of the dataset. Without
+adjustment, a model that predicts "discussion" for everything would
+achieve 85% accuracy while being completely useless. We used
+class_weight='balanced' for Logistic Regression, SVM, and Random
+Forest, which automatically upweights minority classes. XGBoost uses
+mlogloss which is sensitive to misclassification cost natively.
+
+EVALUATION
+We used 5-fold stratified cross-validation with the same random seed
+for all models. Stratification ensures each fold has proportional
+representation of all three classes. We report macro-averaged F1 as
+the primary metric because it weights all three classes equally
+regardless of their frequency. Accuracy alone would be misleading
+given the imbalance.
+
+PRELIMINARY RESULTS
+XGBoost and Random Forest are performing best by macro-F1. Logistic
+Regression and Linear SVM are close. Naive Bayes is the weakest,
+likely because the sublinear TF-IDF scaling violates the independence
+assumption it relies on. We will report final numbers once all folds
+are complete.
+
+-----------------------------------------------------------------------
+DECISIONS MADE
+-----------------------------------------------------------------------
+
+- Use macro-F1 as primary metric rather than accuracy.
+- All five models share the same TF-IDF matrix for fairness.
+- The best model by macro-F1 will be retrained on the full dataset
+  and saved for use in the visualization notebook and eventually
+  Milestone 3's Streamlit app.
+
+-----------------------------------------------------------------------
+SETBACKS
+-----------------------------------------------------------------------
+
+Random Forest CV was slow (~20 minutes for 5 folds on a laptop).
+We added n_jobs=-1 to use all CPU cores which brought it down to
+around 7 minutes. XGBoost was fast even without parallelization.
+
+-----------------------------------------------------------------------
+NEXT STEPS
+-----------------------------------------------------------------------
+
+Finish the modeling notebook: add the confusion matrix grid, feature
+importance chart, and error analysis. Then start the K-Means meeting
+clustering and elbow/silhouette selection plots.
