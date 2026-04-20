@@ -333,7 +333,7 @@ if page == "🏠 Overview":
     fig.update_layout(height=420, legend_title="Cluster")
     st.plotly_chart(fig, use_container_width=True)
 
- ──────────────────────────────────────────────
+ #──────────────────────────────────────────────
 # PAGE: CLUSTER EXPLORER
 # ──────────────────────────────────────────────
 elif page == "🔍 Cluster Explorer":
@@ -567,3 +567,404 @@ elif page == "📋 Meeting Deep Dive":
         st.caption("Metrics recomputed live using the XGBoost pipeline.")
     else:
         st.info("Select two different meetings to compare.")
+
+        # ──────────────────────────────────────────────
+# PAGE: MODEL PERFORMANCE
+# ──────────────────────────────────────────────
+elif page == "🤖 Model Performance":
+    st.title("Model Performance")
+    st.markdown(
+        "The utterance classifier is an **XGBoost + TF-IDF pipeline** trained on all "
+        "171 AMI meetings. Evaluation uses **macro-F1** rather than accuracy — "
+        "98.6 % of utterances are *discussion*, so accuracy is trivially high and misleading. "
+        "All five models below were evaluated with 5-fold stratified cross-validation."
+    )
+
+    # ── CV comparison from saved CSV ──
+    st.subheader("Five-Classifier Comparison (5-fold CV)")
+    if df_model_summary is not None:
+        fig = px.bar(
+            df_model_summary.sort_values("Macro-F1", ascending=True),
+            x="Macro-F1", y="Model", orientation="h",
+            text=df_model_summary.sort_values("Macro-F1", ascending=True)["Macro-F1"]
+                 .map("{:.3f}".format),
+            color="Macro-F1",
+            color_continuous_scale="Blues",
+            title="Macro-F1 by Model (5-fold CV on full corpus)",
+        )
+        fig.update_traces(textposition="outside")
+        fig.update_layout(
+            showlegend=False, height=340,
+            xaxis_range=[0, 1], coloraxis_showscale=False,
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+        # Accuracy alongside F1
+        fig2 = go.Figure()
+        ordered = df_model_summary.sort_values("Macro-F1", ascending=False)
+        fig2.add_trace(go.Bar(
+            name="Macro-F1", x=ordered["Model"], y=ordered["Macro-F1"],
+            marker_color="#3498db", text=ordered["Macro-F1"].map("{:.3f}".format),
+            textposition="outside",
+        ))
+        fig2.add_trace(go.Bar(
+            name="Accuracy", x=ordered["Model"], y=ordered["Accuracy"],
+            marker_color="#2ecc71", text=ordered["Accuracy"].map("{:.3f}".format),
+            textposition="outside",
+        ))
+        fig2.update_layout(
+            barmode="group", height=380, yaxis_range=[0, 1.05],
+            title="Macro-F1 vs Accuracy — all five models",
+            legend_title="Metric",
+        )
+        st.plotly_chart(fig2, use_container_width=True)
+
+        st.dataframe(
+            df_model_summary.style.format({"Macro-F1": "{:.3f}", "Accuracy": "{:.3f}"}),
+            use_container_width=True, hide_index=True,
+        )
+    else:
+        st.warning(
+            "`outputs/model_comparison_summary.csv` not found. "
+            "Re-run `data_modeling.ipynb` to regenerate it."
+        )
+
+    st.markdown("---")
+
+    # ── Live evaluation of best model on full corpus ──
+    st.subheader("Best Model — Live Evaluation on Full Corpus (XGBoost)")
+    st.markdown(
+        "The predictions below are generated **live** by `best_classifier.pkl` "
+        "on every utterance in `analysis_ready_with_preds.csv`."
+    )
+
+    @st.cache_data(show_spinner="Running XGBoost on full corpus…")
+    def compute_live_report(_df_utt):
+        texts  = _df_utt["text_clean"].fillna("").tolist()
+        y_true = _df_utt["label"].tolist()
+        y_pred = ml_predict(texts)
+        rep    = classification_report(
+            y_true, y_pred,
+            labels=LABEL_ORDER, output_dict=True, zero_division=0,
+        )
+        cm     = confusion_matrix(y_true, y_pred, labels=LABEL_ORDER)
+        return rep, cm, y_pred
+
+    report, cm, y_pred_live = compute_live_report(df_utt)
+
+    col_l, col_r = st.columns(2)
+    with col_l:
+        classes = LABEL_ORDER
+        f1s  = [report[c]["f1-score"]  for c in classes]
+        prec = [report[c]["precision"] for c in classes]
+        rec  = [report[c]["recall"]    for c in classes]
+        fig = go.Figure()
+        fig.add_trace(go.Bar(
+            name="F1", x=classes, y=f1s,
+            marker_color=["#3498db", "#2ecc71", "#95a5a6"],
+        ))
+        fig.add_trace(go.Bar(
+            name="Precision", x=classes, y=prec,
+            marker_color=["#2980b9", "#27ae60", "#7f8c8d"],
+        ))
+        fig.add_trace(go.Bar(
+            name="Recall", x=classes, y=rec,
+            marker_color=["#1565c0", "#1abc9c", "#546e7a"],
+        ))
+        fig.update_layout(
+            barmode="group",
+            title="XGBoost — Per-class Metrics (live)",
+            height=380, yaxis_range=[0, 1], yaxis_title="Score",
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    with col_r:
+        cm_norm = cm.astype(float) / cm.sum(axis=1, keepdims=True)
+        fig = px.imshow(
+            cm_norm, x=LABEL_ORDER, y=LABEL_ORDER,
+            color_continuous_scale="Blues", text_auto=".2f",
+            title="XGBoost — Normalised Confusion Matrix (live)",
+            labels=dict(x="Predicted", y="Actual"),
+        )
+        fig.update_layout(height=380)
+        st.plotly_chart(fig, use_container_width=True)
+
+    # Classification report table
+    st.subheader("Classification Report")
+    report_rows = []
+    for cls in LABEL_ORDER:
+        r = report[cls]
+        report_rows.append({
+            "Class":     cls,
+            "Precision": f"{r['precision']:.3f}",
+            "Recall":    f"{r['recall']:.3f}",
+            "F1-Score":  f"{r['f1-score']:.3f}",
+            "Support":   int(r["support"]),
+        })
+    st.dataframe(
+        pd.DataFrame(report_rows),
+        use_container_width=True, hide_index=True,
+    )
+    macro_f1 = report["macro avg"]["f1-score"]
+    st.success(
+        f"**Macro-F1: {macro_f1:.3f}** — averaged across all three classes equally."
+    )
+
+    st.markdown("---")
+    st.subheader("Key Findings")
+    st.markdown(
+        """
+- **XGBoost** achieved the best macro-F1 (0.918) followed closely by Linear SVM (0.893).
+- **Redundancy** is the single strongest signal separating high- and low-quality meetings.
+- **Action items** are consistently the hardest class — many are phrased informally and
+  lack strong cue words, so even the best model misses some.
+- The hardest boundary is **action vs. discussion** — 336 of 456 total errors fall here.
+- **K-Means with k = 3** produced the best silhouette score, yielding three interpretable
+  tiers: Highly Efficient (42), Moderately Efficient (32), Low Efficiency (97).
+        """
+    )
+
+# ──────────────────────────────────────────────
+# PAGE: ANALYZE YOUR MEETING
+# ──────────────────────────────────────────────
+elif page == "🆕 Analyze Your Meeting":
+    st.title("Analyze Your Own Meeting")
+    st.markdown(
+        "Paste your meeting transcript below and get an efficiency score instantly. "
+        "Utterances are classified by the **XGBoost pipeline** trained on 134,242 AMI "
+        "utterances (macro-F1 = 0.918). You can also compare with the regex baseline."
+    )
+    st.info(
+        "**Format:** `SPEAKER_ID|begin_time|utterance text` per line  "
+        "(or just `SPEAKER|text` — both work).\n\n"
+        "```\n"
+        "Alice|12.0|We decided to go with the new API design.\n"
+        "Bob|45.3|I will implement the auth module by Friday.\n"
+        "Alice|78.1|Should we revisit the caching strategy?\n"
+        "Bob|102.4|Yeah, let's go with Redis.\n"
+        "```"
+    )
+
+    sample = textwrap.dedent("""\
+        Alice|12.0|We decided to go with the new API design.
+        Bob|45.3|I will implement the auth module by Friday.
+        Alice|78.1|Should we revisit the caching strategy?
+        Bob|102.4|Yeah let's go with Redis.
+        Carol|134.5|We agreed on using Redis for caching.
+        Bob|160.0|Can you write up the design doc before Monday?
+        Alice|185.2|Sure, I'll have it done.
+        Carol|210.0|Should we do it again or just leave it?
+        Bob|235.0|I think we should just leave it.
+        Alice|258.0|Yeah, we should just leave it as is.
+    """)
+
+    transcript_input = st.text_area("Paste transcript here", value=sample, height=260)
+    uploaded = st.file_uploader("Or upload a .txt file", type=["txt"])
+    if uploaded:
+        transcript_input = uploaded.read().decode("utf-8")
+
+    show_comparison = st.checkbox(
+        "Compare XGBoost vs. Regex side-by-side", value=False
+    )
+
+    if st.button("🔍 Analyze", type="primary"):
+
+        result_ml    = analyze_transcript(transcript_input, use_ml=True)
+        result_regex = analyze_transcript(transcript_input, use_ml=False) \
+                       if show_comparison else None
+
+        if result_ml is None or result_ml["total"] == 0:
+            st.error("Could not parse the transcript. Check the format and try again.")
+            st.stop()
+
+        corpus_mean = df_meet["efficiency_score"].mean()
+        corpus_p25  = df_meet["efficiency_score"].quantile(0.25)
+        corpus_p50  = df_meet["efficiency_score"].quantile(0.50)
+        corpus_p75  = df_meet["efficiency_score"].quantile(0.75)
+
+        def get_tier(eff):
+            if eff >= corpus_p75:
+                return "Highly Efficient"
+            elif eff >= corpus_mean:
+                return "Moderately Efficient"
+            elif eff >= corpus_p25:
+                return "Low Efficiency"
+            return "Very Low Efficiency"
+
+        eff  = result_ml["efficiency_score"]
+        tier = get_tier(eff)
+        tier_color = PALETTE.get(tier, "#888")
+
+        st.markdown("---")
+        st.subheader("Results — XGBoost Pipeline")
+
+        c1, c2, c3, c4, c5 = st.columns(5)
+        c1.metric("Efficiency Score",  f"{eff:.3f}",
+                  delta=f"{eff - corpus_mean:+.3f} vs corpus avg")
+        c2.metric("Tier",              tier)
+        c3.metric("Decision Density",  f"{result_ml['decision_density']:.2%}")
+        c4.metric("Redundancy",        f"{result_ml['redundancy_score']:.2%}")
+        c5.metric("Action Clarity",    f"{result_ml['action_clarity']:.2%}")
+
+        # Gauge
+        fig = go.Figure(go.Indicator(
+            mode="gauge+number+delta",
+            value=eff,
+            delta={"reference": corpus_mean, "valueformat": ".3f"},
+            gauge={
+                "axis": {"range": [df_meet["efficiency_score"].min(),
+                                   df_meet["efficiency_score"].max()]},
+                "bar":  {"color": tier_color},
+                "steps": [
+                    {"range": [df_meet["efficiency_score"].min(), corpus_p25],
+                     "color": "#fadbd8"},
+                    {"range": [corpus_p25, corpus_p50], "color": "#fdebd0"},
+                    {"range": [corpus_p50, corpus_p75], "color": "#d5f5e3"},
+                    {"range": [corpus_p75, df_meet["efficiency_score"].max()],
+                     "color": "#abebc6"},
+                ],
+                "threshold": {
+                    "line": {"color": "red", "width": 2},
+                    "thickness": 0.75,
+                    "value": corpus_mean,
+                },
+            },
+            title={"text": f"Efficiency Score — {tier}"},
+        ))
+        fig.update_layout(height=300)
+        st.plotly_chart(fig, use_container_width=True)
+
+        # Label breakdown + utterance table
+        df_r = result_ml["df"]
+        label_counts = df_r["label"].value_counts().reset_index()
+        label_counts.columns = ["label", "count"]
+        col_chart, col_table = st.columns([1, 1])
+        with col_chart:
+            fig2 = px.pie(
+                label_counts, names="label", values="count",
+                color="label", color_discrete_map=LABEL_COLORS,
+                title="Utterance Label Breakdown (XGBoost)",
+            )
+            fig2.update_layout(height=300)
+            st.plotly_chart(fig2, use_container_width=True)
+        with col_table:
+            st.subheader("Labelled Utterances")
+            display_df = df_r[["speaker_id", "label", "text_clean"]].copy()
+            display_df.columns = ["Speaker", "Label", "Text"]
+            st.dataframe(display_df, use_container_width=True, height=280)
+
+        # ── XGBoost vs Regex comparison ──
+        if show_comparison and result_regex:
+            st.markdown("---")
+            st.subheader("🔬 XGBoost vs. Regex Comparison")
+            eff_r = result_regex["efficiency_score"]
+
+            cmp_data = pd.DataFrame({
+                "Metric": ["Efficiency Score", "Decision Density",
+                           "Action Density", "Redundancy", "Action Clarity",
+                           "# Decisions", "# Actions"],
+                "XGBoost": [
+                    result_ml["efficiency_score"], result_ml["decision_density"],
+                    result_ml["action_density"],   result_ml["redundancy_score"],
+                    result_ml["action_clarity"],   result_ml["n_decisions"],
+                    result_ml["n_actions"],
+                ],
+                "Regex": [
+                    result_regex["efficiency_score"], result_regex["decision_density"],
+                    result_regex["action_density"],   result_regex["redundancy_score"],
+                    result_regex["action_clarity"],   result_regex["n_decisions"],
+                    result_regex["n_actions"],
+                ],
+            })
+
+            fig_cmp = go.Figure()
+            fig_cmp.add_trace(go.Bar(
+                name="XGBoost", x=cmp_data["Metric"], y=cmp_data["XGBoost"],
+                marker_color="#3498db",
+            ))
+            fig_cmp.add_trace(go.Bar(
+                name="Regex", x=cmp_data["Metric"], y=cmp_data["Regex"],
+                marker_color="#e67e22",
+            ))
+            fig_cmp.update_layout(barmode="group", height=380)
+            st.plotly_chart(fig_cmp, use_container_width=True)
+
+            # Side-by-side label pies
+            pc1, pc2 = st.columns(2)
+            with pc1:
+                lc_ml = result_ml["df"]["label"].value_counts().reset_index()
+                lc_ml.columns = ["label", "count"]
+                fig_p1 = px.pie(
+                    lc_ml, names="label", values="count",
+                    color="label", color_discrete_map=LABEL_COLORS,
+                    title="Labels — XGBoost",
+                )
+                fig_p1.update_layout(height=280)
+                st.plotly_chart(fig_p1, use_container_width=True)
+            with pc2:
+                lc_rx = result_regex["df"]["label"].value_counts().reset_index()
+                lc_rx.columns = ["label", "count"]
+                fig_p2 = px.pie(
+                    lc_rx, names="label", values="count",
+                    color="label", color_discrete_map=LABEL_COLORS,
+                    title="Labels — Regex",
+                )
+                fig_p2.update_layout(height=280)
+                st.plotly_chart(fig_p2, use_container_width=True)
+
+            # Per-utterance diff table
+            diff = result_ml["df"][["speaker_id", "text_clean", "label"]].copy()
+            diff.columns = ["Speaker", "Text", "XGBoost Label"]
+            diff["Regex Label"] = result_regex["df"]["label"].values
+            diff["Match"] = diff["XGBoost Label"] == diff["Regex Label"]
+            st.subheader("Per-Utterance Label Comparison")
+            st.dataframe(
+                diff.style.apply(
+                    lambda row: ["background-color: #fdebd0" if not row["Match"]
+                                 else "" for _ in row], axis=1
+                ),
+                use_container_width=True, height=300,
+            )
+            n_diff = (~diff["Match"]).sum()
+            st.caption(
+                f"{n_diff} of {len(diff)} utterances labelled differently "
+                f"by XGBoost vs. Regex ({n_diff/len(diff):.0%})."
+            )
+
+        # ── Recommendations ──
+        st.markdown("---")
+        st.subheader("💡 Recommendations")
+        recs = []
+        if result_ml["decision_density"] < corpus_mean * 0.5:
+            recs.append(
+                "**Low decision density** — try ending agenda items with an explicit "
+                "decision statement so the record is clear."
+            )
+        if result_ml["redundancy_score"] > 0.35:
+            recs.append(
+                "**High redundancy** — a significant portion of the meeting revisited "
+                "ground already covered. Consider a structured agenda with time-boxing."
+            )
+        if result_ml["action_clarity"] < 0.3:
+            recs.append(
+                "**Low action clarity** — action items were identified but most lack a "
+                "named owner or deadline. Add 'who does what by when' to every task."
+            )
+        if result_ml["n_decisions"] == 0:
+            recs.append(
+                "**No decisions detected** — if decisions were made verbally, "
+                "try making them explicit."
+            )
+        if result_ml["n_actions"] == 0:
+            recs.append(
+                "**No action items detected** — if next steps were discussed, consider "
+                "formalising them with clearer ownership language."
+            )
+        if recs:
+            for r in recs:
+                st.warning(r)
+        else:
+            st.success(
+                "This meeting scores well across all dimensions. Good work keeping it "
+                "focused and actionable."
+            )
