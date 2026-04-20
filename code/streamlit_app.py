@@ -14,6 +14,9 @@ from plotly.subplots import make_subplots
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics import classification_report, confusion_matrix
 import streamlit as st
+import os
+BASE_DIR = os.path.dirname(__file__)
+
 
 warnings.filterwarnings("ignore")
 
@@ -191,10 +194,10 @@ def analyze_transcript(raw_text: str, use_ml: bool = True) -> dict | None:
 # ──────────────────────────────────────────────
 @st.cache_data
 def load_data():
-    df_meet = pd.read_csv("data/processed/meeting_metrics_clustered.csv")
-    df_utt  = pd.read_csv("data/processed/analysis_ready_with_preds.csv")
+    df_meet = pd.read_csv(os.path.join(BASE_DIR, "data/processed/meeting_metrics_clustered.csv"))
+    df_utt = pd.read_csv(os.path.join(BASE_DIR, "data/processed/analysis_ready_with_preds.csv"))
     try:
-        df_dur  = pd.read_csv("data/processed/meeting_durations.csv")
+        df_dur  = pd.read_csv(os.path.join(BASE_DIR,"data/processed/meeting_durations.csv"))
         df_meet = df_meet.merge(df_dur, on="meeting_id", how="left")
     except FileNotFoundError:
         df_meet["duration_minutes"] = np.nan
