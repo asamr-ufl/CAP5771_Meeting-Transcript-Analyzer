@@ -206,7 +206,7 @@ def load_data():
 @st.cache_data
 def load_model_comparison():
     try:
-        return pd.read_csv("outputs/model_comparison_summary.csv")
+        return pd.read_csv(os.path.join(BASE_DIR,"outputs/model_comparison_summary.csv"))
     except FileNotFoundError:
         return None
 
