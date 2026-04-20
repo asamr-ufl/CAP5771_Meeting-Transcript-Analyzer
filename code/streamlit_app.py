@@ -49,10 +49,10 @@ LABEL_ORDER = ["action", "decision", "discussion"]   # matches LabelEncoder orde
 # ──────────────────────────────────────────────
 @st.cache_resource
 def load_models():
-    pipeline = joblib.load("models/best_classifier.pkl")
-    le       = joblib.load("models/label_encoder.pkl")
-    kmeans   = joblib.load("models/kmeans_clusters.pkl")
-    scaler   = joblib.load("models/cluster_scaler.pkl")
+    pipeline = joblib.load("code/models/best_classifier.pkl")
+    le       = joblib.load("code/models/label_encoder.pkl")
+    kmeans   = joblib.load("code/models/kmeans_clusters.pkl")
+    scaler   = joblib.load("code/models/cluster_scaler.pkl")
     return pipeline, le, kmeans, scaler
 
 pipeline, le, kmeans, scaler = load_models()
