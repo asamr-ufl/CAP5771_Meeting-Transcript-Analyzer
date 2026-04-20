@@ -1,0 +1,3 @@
+Model,Macro-F1,Accuracy
+TF-IDF Best Classifier,0.7927,0.99
+RoBERTa (fine-tuned),0.8538,0.9974
