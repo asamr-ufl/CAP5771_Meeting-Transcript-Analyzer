@@ -1,0 +1,91 @@
+CAP5771 - Meeting Transcript Efficiency Analyzer
+Milestone 3 | Week 11 Diary Entry
+Topic: Streamlit App Design and Implementation
+Date: Week of March 23, 2026
+-----------------------------------------------------------------------
+WHAT WE WORKED ON THIS WEEK
+-----------------------------------------------------------------------
+This week we started building the Streamlit app that forms the core
+deliverable of Milestone 3. The goal is to take the models and outputs
+from Milestone 2 and wrap them into a deployed, interactive tool that
+works on any meeting transcript.
+
+The app is organized into five pages accessible from a sidebar:
+Overview, Cluster Explorer, Meeting Deep Dive, Model Performance,
+and Analyze Your Meeting. This structure mirrors the narrative we
+built in the visualization notebook but adapts it for a single-page
+app with persistent state.
+
+The first design decision was how to load models. We load four saved
+artifacts at startup using joblib: best_classifier.pkl (the XGBoost
+TF-IDF pipeline), label_encoder.pkl, kmeans_clusters.pkl, and
+cluster_scaler.pkl. All four are wrapped in st.cache_resource so they
+are loaded once per session rather than on every interaction. This
+keeps the app responsive even on slower machines.
+
+The Overview page displays five KPI metrics at the top followed by an
+efficiency score histogram with a mean reference line and a cluster
+pie chart. Below these, four KDE curves show how each efficiency
+metric is distributed across clusters. The PCA scatter plot at the
+bottom gives a visual summary of the three meeting clusters in
+two-dimensional space.
+
+The Cluster Explorer page adds an interactive selectbox for filtering
+by cluster, a four-panel box plot comparing metric distributions, a
+custom efficiency score calculator with adjustable sliders, and top
+and bottom meeting tables. The slider tool was a deliberate addition
+based on feedback during Milestone 2 reviews — different stakeholders
+weight decisions versus redundancy differently, and this lets them
+explore that tradeoff.
+
+The Model Performance page presents the five-classifier comparison
+results from Milestone 2 in a visual format. A horizontal bar chart
+ranks models by macro-F1, and a grouped bar chart shows macro-F1
+alongside accuracy for each model. Below these charts, a live
+evaluation block runs the saved XGBoost pipeline on the full corpus
+and generates a real-time classification report and normalized
+confusion matrix. This ensures the reported metrics are reproducible
+directly from the deployed app rather than relying solely on saved
+numbers.
+
+We also added a sidebar that shows the active classifier name and
+macro-F1 score, the dataset size, and team names. This gives any
+visitor immediate context without requiring them to navigate to the
+model performance page first.
+
+-----------------------------------------------------------------------
+DECISIONS MADE
+-----------------------------------------------------------------------
+- Load all models once at startup with st.cache_resource to avoid
+  reloading on every widget interaction.
+- Organize the app into five focused pages rather than one long
+  scrolling page, matching the narrative structure of the notebook.
+- Include the custom efficiency weight sliders in Cluster Explorer
+  as a direct response to the insight from Week 10 that different
+  users prioritize different metrics.
+- Show a live classification report in the Model Performance page
+  rather than only displaying pre-saved numbers, so results are
+  fully reproducible from the deployed app.
+- Display the active classifier and dataset summary in the sidebar
+  so visitors always have essential context visible regardless of
+  which page they are on.
+
+-----------------------------------------------------------------------
+SETBACKS
+-----------------------------------------------------------------------
+We found that loading the full corpus CSV on every page render was
+slow when navigating between pages. Wrapping load_data() with
+st.cache_data solved this — the data frame is loaded once and reused
+across all pages without reloading from disk.
+
+The KDE curves in the Overview page initially produced errors for
+clusters with very few meetings because kernel density estimation
+requires a minimum number of data points. We added a minimum sample
+guard and fell back to a simple histogram for small clusters.
+
+-----------------------------------------------------------------------
+NEXT STEPS
+-----------------------------------------------------------------------
+Next week we will complete the Meeting Deep Dive and Analyze Your
+Meeting pages, test the end-to-end pipeline on a pasted transcript,
+and finalize deployment on Streamlit Community Cloud.

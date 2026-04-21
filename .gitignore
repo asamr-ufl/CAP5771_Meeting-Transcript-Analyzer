@@ -21,3 +21,6 @@ venv/
 # IDE
 .vscode/
 .idea/
+
+code/data/roberta_checkpoints/
+code/data/roberta_model/

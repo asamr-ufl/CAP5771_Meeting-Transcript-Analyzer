@@ -1,0 +1,132 @@
+CAP5771 - Meeting Transcript Efficiency Analyzer
+Milestone 3 | Week 12 Diary Entry
+Topic: App Completion, Deployment, and Final Reflection
+Date: Week of April 7, 2026
+-----------------------------------------------------------------------
+WHAT WE WORKED ON THIS WEEK
+-----------------------------------------------------------------------
+This week we completed the remaining pages of the Streamlit app,
+tested the full pipeline end to end, and deployed the app publicly
+on Streamlit Community Cloud.
+
+MEETING DEEP DIVE PAGE
+This page lets the user select any of the 171 AMI meetings and
+explore it in detail. A toggle switch lets them choose between
+pre-computed CV predictions from the modeling notebook and live
+inference using the saved XGBoost pipeline. Live inference reruns
+the clean_text function and calls ml_predict on every utterance in
+the selected meeting, which takes under a second for a typical meeting
+of 700 to 800 utterances.
+
+The page shows a scatter timeline colored by label, a label breakdown
+bar chart, speaker contribution stacked bars, and tabbed sample
+utterances for each class. A meeting comparison tool at the bottom
+lets the user select two meetings side by side and see a grouped bar
+chart comparing their metrics directly. This was the most requested
+feature during our internal review and took the longest to get right
+because it requires running live inference on two separate meetings
+simultaneously.
+
+ANALYZE YOUR MEETING PAGE
+This is the most user-facing feature of the app. A user pastes a raw
+transcript in the format SPEAKER|timestamp|text and clicks Analyze.
+The app runs the full wrangling and prediction pipeline in real time:
+cleaning the text, labeling each utterance with the XGBoost pipeline,
+computing all five efficiency metrics, assigning an efficiency tier
+based on the corpus percentiles, and displaying results including a
+gauge chart, label pie, and utterance table.
+
+An optional checkbox enables a side-by-side comparison between the
+XGBoost pipeline and the regex baseline. This comparison was included
+because it makes the value of the learned model visible to the user
+directly — they can see which utterances the model catches that the
+regex misses, particularly informal decisions and action items that
+lack standard trigger words.
+
+The recommendations section at the bottom generates plain-language
+advice based on the computed metrics. If decision density is below
+half the corpus average, it recommends making decisions explicit. If
+redundancy is above 0.35, it recommends time-boxing agenda items. If
+action clarity is low, it recommends adding owner and deadline language
+to every task. These thresholds were chosen based on the distribution
+analysis from Milestone 2.
+
+We also added support for uploading a .txt transcript file directly
+rather than pasting text, which makes the tool more practical for
+users who have saved transcripts on disk. The uploaded file is decoded
+and passed through the same analysis pipeline as pasted text with no
+additional preprocessing required.
+
+DEPLOYMENT
+We deployed the app on Streamlit Community Cloud by connecting it
+directly to the GitHub repository. The app entry point is
+code/streamlit_app.py. Streamlit Community Cloud installs dependencies
+from requirements.txt automatically on each deploy. Any push to the
+main branch triggers an automatic redeploy, so the live app always
+reflects the latest committed version.
+
+-----------------------------------------------------------------------
+DECISIONS MADE
+-----------------------------------------------------------------------
+- Include a live inference toggle in Meeting Deep Dive so users can
+  see both pre-computed and real-time results and understand that the
+  pipeline is actually running, not just displaying cached outputs.
+- Use corpus percentiles rather than fixed thresholds for the
+  efficiency tier boundaries so the tier labels are meaningful
+  relative to real meeting data.
+- Generate recommendations from metric thresholds rather than free
+  text so the advice is consistent, reproducible, and directly tied
+  to the computed outputs.
+- Deploy via Streamlit Community Cloud connected to the main branch
+  so any future push to main automatically updates the live app.
+- Support both pasted text and file upload in the Analyze Your
+  Meeting page so the tool is accessible to users with different
+  workflows.
+
+-----------------------------------------------------------------------
+SETBACKS
+-----------------------------------------------------------------------
+The meeting comparison tool initially caused a slow response when both
+selected meetings were large. We resolved this by caching the
+get_live_metrics function per meeting ID so repeated selections of the
+same meeting do not trigger redundant inference.
+
+The gauge chart required careful range setting. Using fixed bounds of
+0 and 1 made the needle appear stuck in a narrow range because most
+efficiency scores fall between 0.15 and 0.45. We switched to the
+actual min and max of the corpus distribution, which made the gauge
+much more readable and meaningful for the user.
+
+-----------------------------------------------------------------------
+FINAL REFLECTION ON MILESTONE 3
+-----------------------------------------------------------------------
+The Streamlit app brings together every stage of the project into one
+coherent tool. Looking back across all three milestones, the clearest
+lesson is that the hardest problems were not technical. Deciding what
+to measure and how to explain it to a non-technical user took more
+iteration than writing the code.
+
+The redundancy metric ended up being the most practically useful
+output. Users can intuitively understand that repeating the same
+points wastes time, and the metric makes that visible with a number.
+Decision density is useful but harder to act on directly because users
+rarely have a clear sense of what a good decision density looks like
+before seeing the corpus distribution.
+
+The custom efficiency weight slider in the Cluster Explorer turned out
+to be one of the most discussed features during testing. Different
+team members instinctively weighted the metrics differently, which
+validated the decision to make the formula adjustable rather than
+hardcoding the weights.
+
+If we were to continue this project, the most valuable next step would
+be replacing the keyword-based labeling with a model trained on
+human-annotated data. The current labels are reasonable but introduce
+systematic bias toward formal phrasing. A learned labeler would
+generalize better to informal meeting styles where decisions and action
+items are expressed without standard trigger words.
+
+Overall, the project achieved its original goal: a working tool that
+processes a meeting transcript and returns clear, interpretable
+feedback on meeting efficiency, backed by a reproducible data science
+pipeline from raw corpus to deployed app.
